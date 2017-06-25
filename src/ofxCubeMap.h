@@ -44,9 +44,7 @@
 class ofxCubeMap
 {
 	public:
-		
 		ofxCubeMap();
-
 		// Init ---------------------
 	
 		// These should all be the same size and all power of two, i.e. 256, 512, 1024 (I think).
@@ -81,8 +79,8 @@ class ofxCubeMap
 		void debugDrawCubemapCameras();
 		void debugDrawCubemapFaces( float _faceSize, float _border = 0.0f );
 
-		void drawFace( GLuint _face, float _x, float _y );
-		void drawFace( GLuint _face, float _x, float _y, float _w, float _h );
+		void drawFace( GLuint _face, float _x, float _y, int idx );
+		void drawFace( GLuint _face, float _x, float _y, float _w, float _h, int idx );
 	
 		unsigned int getTextureID();
 	
@@ -103,7 +101,14 @@ class ofxCubeMap
 		ofMatrix4x4 getLookAtMatrixForFace( GLuint _face );
 
 	private:
-		
+        enum defaultAttributes{
+            POSITION_ATTRIBUTE=0,  // tig: was =1, and BOY, what a performance hog this was!!! see: http://www.chromium.org/nativeclient/how-tos/3d-tips-and-best-practices
+            COLOR_ATTRIBUTE,
+            NORMAL_ATTRIBUTE,
+            TEXCOORD_ATTRIBUTE,
+            INDEX_ATTRIBUTE  // usually not used except for compute shades
+        };
+
 		string getDescriptiveStringForFace( GLuint _face );
 		void setupSkyBoxVertices();
 	

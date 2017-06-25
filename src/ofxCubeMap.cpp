@@ -28,14 +28,14 @@ void ofxCubeMap::loadImages( string pos_x, string neg_x,
 		ofDisableTextureEdgeHack();
 		ofLogVerbose() << "ofxCubeMap:loadImages (string version), disabled texture hack, re-enabling when done.";
 	}*/
-	
-	ofImage images[6];	
-	bool loaded1 = images[0].loadImage(pos_x);
-	bool loaded2 = images[1].loadImage(neg_x);
-	bool loaded3 = images[2].loadImage(pos_y);
-	bool loaded4 = images[3].loadImage(neg_y);
-	bool loaded5 = images[4].loadImage(pos_z);
-	bool loaded6 = images[5].loadImage(neg_z);
+    ofImage images[6];
+
+	bool loaded1 = images[0].load(pos_x);
+	bool loaded2 = images[1].load(neg_x);
+	bool loaded3 = images[2].load(pos_y);
+	bool loaded4 = images[3].load(neg_y);
+	bool loaded5 = images[4].load(pos_z);
+	bool loaded6 = images[5].load(neg_z);
 	
 	if( loaded1 && loaded2 && loaded3 && loaded4 && loaded5 && loaded6 ) {}
 	else { ofLogError() << "ofxCubeMap: failed to load one of the cubemaps!"; }
@@ -99,6 +99,8 @@ void ofxCubeMap::loadFromOfImages(  ofImage pos_x, ofImage neg_x,
 	data_ny = &neg_y.getPixels();
 	data_nz = &neg_z.getPixels();
 	
+
+	
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data_px -> getData()); // positive x
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data_py -> getData()); // positive y
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pz -> getData()); // positive z
@@ -106,6 +108,18 @@ void ofxCubeMap::loadFromOfImages(  ofImage pos_x, ofImage neg_x,
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data_nx -> getData()); // negative x
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data_ny -> getData()); // negative y
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data_nz -> getData()); // negative z
+    
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    
+#ifndef TARGET_OPENGLES
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE); // GL_TEXTURE_WRAP_R is not in the ES2 header, hmm..
+#endif
+    
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_CUBE_MAP,0);
+
 }
 
 
@@ -169,18 +183,18 @@ void ofxCubeMap::endDrawingInto2D()
 //--------------------------------------------------------------
 void ofxCubeMap::beginDrawingInto3D( GLuint _face )
 {
-	ofPushView();
-
-	beginDrawingInto2D( _face );	
-	
-	glMatrixMode( GL_PROJECTION );
-	glLoadIdentity();
-	
-	glLoadMatrixf( getProjectionMatrix().getPtr() );
-		
-	glMatrixMode( GL_MODELVIEW );
-	ofPushMatrix();
-	glLoadMatrixf( getLookAtMatrixForFace( _face ).getPtr() );
+//	ofPushView();
+//
+//	beginDrawingInto2D( _face );	
+//	
+//	glMatrixMode( GL_PROJECTION );
+//	glLoadIdentity();
+//	
+//	glLoadMatrixf( getProjectionMatrix().getPtr() );
+//		
+//	glMatrixMode( GL_MODELVIEW );
+//	ofPushMatrix();
+//	glLoadMatrixf( getLookAtMatrixForFace( _face ).getPtr() );
 	
 }
 
@@ -209,6 +223,7 @@ void ofxCubeMap::bindToTextureUnit( int pos )
 	glActiveTexture( GL_TEXTURE0 + pos );
 	glEnable( GL_TEXTURE_CUBE_MAP );
 	glBindTexture( GL_TEXTURE_CUBE_MAP, textureObjectID );
+//    cout << ofToString(textureObjectID) << endl;
 }
 
 //--------------------------------------------------------------
@@ -226,45 +241,46 @@ void ofxCubeMap::unbind()
 void ofxCubeMap::drawSkybox( float _size )
 {
 	
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer( 	3, GL_FLOAT, sizeof(ofVec3f), &cubemapVertices.data()->x );
+    glEnableVertexAttribArray(defaultAttributes::POSITION_ATTRIBUTE);
+	glVertexAttribPointer( defaultAttributes::POSITION_ATTRIBUTE, 3, GL_FLOAT, GL_FALSE, sizeof(ofVec3f), &cubemapVertices.data()->x );
 	
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	glTexCoordPointer( 	3, GL_FLOAT, sizeof(ofVec3f), &cubemapTexCoords.data()->x );
+    glEnableVertexAttribArray(defaultAttributes::TEXCOORD_ATTRIBUTE);
+	glVertexAttribPointer( defaultAttributes::TEXCOORD_ATTRIBUTE, 3, GL_FLOAT, GL_FALSE, sizeof(ofVec3f), &cubemapTexCoords.data()->x );
 	
 	ofPushMatrix();
 		ofScale( _size, _size, _size );
 		glDrawArrays(GL_TRIANGLES, 0, cubemapVertices.size() );
-	glPopMatrix();
+	ofPopMatrix();
 	
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableVertexAttribArray(defaultAttributes::TEXCOORD_ATTRIBUTE);
+
 }
 
 //--------------------------------------------------------------
 void ofxCubeMap::debugDrawCubemapCameras()
 {
-	for( int i = 0; i < 6; i++ )
-	{
-		GLuint face = GL_TEXTURE_CUBE_MAP_POSITIVE_X + i;
-		ofMatrix4x4 modelViewProjectionMatrix = getLookAtMatrixForFace( face ) * getProjectionMatrix();
-		
-		ofMatrix4x4 inverseCameraMatrix;
-		inverseCameraMatrix.makeInvertOf( modelViewProjectionMatrix );
-		
-		ofPushMatrix();
-			
-			glMultMatrixf( inverseCameraMatrix.getPtr() );
-	
-			ofNoFill();
-		
-				// Draw box in camera space, i.e. frustum in world space, box -1, -1, -1 to +1, +1, +1
-				ofBox(0, 0, 0, 2.0f);
-			
-			ofFill();
-		
-		ofPopMatrix();
-		
-	}
+//	for( int i = 0; i < 6; i++ )
+//	{
+//		GLuint face = GL_TEXTURE_CUBE_MAP_POSITIVE_X + i;
+//		ofMatrix4x4 modelViewProjectionMatrix = getLookAtMatrixForFace( face ) * getProjectionMatrix();
+//		
+//		ofMatrix4x4 inverseCameraMatrix;
+//		inverseCameraMatrix.makeInvertOf( modelViewProjectionMatrix );
+//		
+//		ofPushMatrix();
+//			
+//			glMultMatrixf( inverseCameraMatrix.getPtr() );
+//	
+//			ofNoFill();
+//		
+//				// Draw box in camera space, i.e. frustum in world space, box -1, -1, -1 to +1, +1, +1
+//				ofDrawBox(0, 0, 0, 2.0f);
+//			
+//			ofFill();
+//		
+//		ofPopMatrix();
+//		
+//	}
 }
 
 //--------------------------------------------------------------
@@ -274,7 +290,7 @@ void ofxCubeMap::debugDrawCubemapFaces( float _faceSize, float _border )
 	{
 		int tmpX = (i * _faceSize) + (i * _border);
 		int tmpY = 0;
-		drawFace( GL_TEXTURE_CUBE_MAP_POSITIVE_X + i , tmpX, tmpY, _faceSize, _faceSize );
+		drawFace( GL_TEXTURE_CUBE_MAP_POSITIVE_X + i , tmpX, tmpY, _faceSize, _faceSize, i );
 	}
 }
 
@@ -386,9 +402,9 @@ ofMatrix4x4 ofxCubeMap::getLookAtMatrixForFace( GLuint _face )
 
 
 //--------------------------------------------------------------
-void ofxCubeMap::drawFace( GLuint _face, float _x, float _y )
+void ofxCubeMap::drawFace( GLuint _face, float _x, float _y, int idx )
 {
-	drawFace( _face, _x, _y, size, size );
+	drawFace( _face, _x, _y, size, size, idx );
 }
 
 //--------------------------------------------------------------
@@ -401,7 +417,7 @@ void ofxCubeMap::drawFace( GLuint _face, float _x, float _y )
 // 	   myFboCubeMap.drawFace( GL_TEXTURE_CUBE_MAP_POSITIVE_X + i , i * 100, 0, 100, 100 );
 //  }
 //
-void ofxCubeMap::drawFace( GLuint _face, float _x, float _y, float _w, float _h )
+void ofxCubeMap::drawFace( GLuint _face, float _x, float _y, float _w, float _h, int idx )
 {
 	// create a rect with the correct 3D texture coordinates, draw to screen
 	scratchVertices.clear();
@@ -485,14 +501,14 @@ void ofxCubeMap::drawFace( GLuint _face, float _x, float _y, float _w, float _h 
 	scratchIndices.push_back( 3 );
 	
 	// swap all this for an ofMesh when it supports ofVec3f tex coordinates
+    bind();
+
+    glEnableVertexAttribArray(defaultAttributes::POSITION_ATTRIBUTE);
+	glVertexAttribPointer(defaultAttributes::POSITION_ATTRIBUTE, 3, GL_FLOAT, GL_FALSE, sizeof(ofVec3f), &scratchVertices.data()->x );
 	
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glVertexPointer( 	3, GL_FLOAT, sizeof(ofVec3f), &scratchVertices.data()->x );
+    glEnableVertexAttribArray(defaultAttributes::TEXCOORD_ATTRIBUTE);
+	glVertexAttribPointer(defaultAttributes::TEXCOORD_ATTRIBUTE, 3, GL_FLOAT, GL_FALSE, sizeof(ofVec3f), &scratchTexCoords.data()->x );
 	
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	glTexCoordPointer( 	3, GL_FLOAT, sizeof(ofVec3f), &scratchTexCoords.data()->x );
-	
-	bind();
 	
 #ifdef TARGET_OPENGLES
 	glDrawElements( GL_TRIANGLES, scratchIndices.size(), GL_UNSIGNED_SHORT, 	scratchIndices.data() );
@@ -500,10 +516,10 @@ void ofxCubeMap::drawFace( GLuint _face, float _x, float _y, float _w, float _h 
 	glDrawElements( GL_TRIANGLES, scratchIndices.size(), GL_UNSIGNED_INT, 		scratchIndices.data() );
 #endif
 	
-	unbind();
 	
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	
+    glDisableVertexAttribArray(defaultAttributes::TEXCOORD_ATTRIBUTE);
+
+    unbind();
 }
 
 //--------------------------------------------------------------
