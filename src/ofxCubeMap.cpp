@@ -77,7 +77,7 @@ void ofxCubeMap::loadFromOfImages(  ofImage pos_x, ofImage neg_x,
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);	
 	
 	
-	unsigned char * data_px, * data_nx, * data_py, * data_ny, * data_pz, * data_nz;
+    ofPixels * data_px, * data_nx, * data_py, * data_ny, * data_pz, * data_nz;
 	
 	size = pos_x.getWidth();
 	
@@ -91,21 +91,21 @@ void ofxCubeMap::loadFromOfImages(  ofImage pos_x, ofImage neg_x,
 //	data_ny = new unsigned char [size * size * 3];
 //	data_nz = new unsigned char [size * size * 3];
 	
-	data_px = pos_x.getPixels();
-	data_py = pos_y.getPixels();
-	data_pz = pos_z.getPixels();	
+	data_px = &pos_x.getPixels();
+	data_py = &pos_y.getPixels();
+	data_pz = &pos_z.getPixels();
 	
-	data_nx = neg_x.getPixels();
-	data_ny = neg_y.getPixels();	
-	data_nz = neg_z.getPixels();
+	data_nx = &neg_x.getPixels();
+	data_ny = &neg_y.getPixels();
+	data_nz = &neg_z.getPixels();
 	
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data_px); // positive x
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data_py); // positive y
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pz); // positive z	
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data_px -> getData()); // positive x
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data_py -> getData()); // positive y
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data_pz -> getData()); // positive z
 	
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data_nx); // negative x
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data_ny); // negative y
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data_nz); // negative z	
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data_nx -> getData()); // negative x
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data_ny -> getData()); // negative y
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, data_nz -> getData()); // negative z
 }
 
 
